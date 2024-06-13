@@ -12,13 +12,21 @@ resource "aws_vpc" "tf-vpc" {
   }
 }
 
+resource "aws_subnet" "tf-subnet" {
+  vpc_id = aws_vpc.tf-vpc.id
+  cidr_block = var.vpc_cidr_block
+  availability_zone = var.availability_zone
+  tags = {
+    Name = "tf-subnet"
+  }
+}
+
 ## Security Groups 
 
 resource "aws_security_group" "alb_sg" {
   name        = "alb_sg"
   description = "AWS ALB Security Group"
   vpc_id      = aws_vpc.tf-vpc.id
-
 
   // Inbound Rules
   ingress {
@@ -64,6 +72,7 @@ resource "aws_lb" "alb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
+
 }
 
 
@@ -111,15 +120,20 @@ resource "aws_launch_template" "ec2_template" {
   }
 
   user_data = file("main.sh")
+  
+
 }
 
 
 resource "aws_autoscaling_group" "asg" {
   name     = "asg"
-  min_size = 2
-  max_size = 4
-
+  min_size = 1
+  max_size = 3
+  desired_capacity = 2
+  vpc_zone_identifier = [aws_subnet.tf-subnet.id]
+ 
   target_group_arns = [aws_lb_target_group.alb_tg.arn]
+
   launch_template {
     id      = aws_launch_template.ec2_template.id
     version = "$Latest"
@@ -181,7 +195,7 @@ resource "aws_cloudwatch_metric_alarm" "scale_down_alarm" {
   period = 120
   statistic = "Average"
   threshold = 10
-
+namespace = "AWS/EC2"
    dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.asg.name
   }
