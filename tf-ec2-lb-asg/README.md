@@ -18,7 +18,7 @@ It listens or monitors the entry of certain type of traffic e.g. HTTP, TCP, UDP 
 Group of EC2 instances with Launch Template, Target Group and Scaling policies configuration for a particular subnet of IP addresses. Here, we add Auto Scaling Group as a desired Target Group for ALB.
 #### Scale-Up and Scale-Down Policies: 
  These policies need to be configured in the auto scaling group for handling auto scaling whenever specified metric (e.g. CPUUtilization) surpasses certain threshold.
-#### CloudWatch Metrics: 
+#### CloudWatch Metric Alarms: 
 Used to observe the metrics and start an alarm, and perform certain action(here, scale up or scale down) whenever threshold condition reached.
 #### Health Checks:
  AWS can do health checks by automatic hitting certain endpoint (e.g. `/health`), configured in the target group.
