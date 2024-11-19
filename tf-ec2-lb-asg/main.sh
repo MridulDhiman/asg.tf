@@ -1,62 +1,54 @@
 #!/bin/bash
 
-# Update and install required packages
-sudo apt-get update -y
-sudo apt-get install -y nginx nodejs npm
+# Update system packages
+echo "Updating system packages..."
+sudo apt-get update
+sudo apt-get upgrade -y
 
-# Setup Nginx
-sudo rm /etc/nginx/sites-enabled/default
-cat <<EOT >> /etc/nginx/sites-available/default
-server {
-    listen 80;
+# Install required packages
+echo "Installing required packages..."
+sudo apt-get install -y \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
 
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-    }
-}
-EOT
-sudo ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
-sudo systemctl restart nginx
+# Add Docker's official GPG key
+echo "Adding Docker's GPG key..."
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
-# Setup Express app
-mkdir -p /home/ubuntu/express-app
-cd /home/ubuntu/express-app
+# Set up Docker repository
+echo "Setting up Docker repository..."
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-cat <<EOT >> app.js
-const express = require('express');
-const app = express();
-const port = 3000;
+# Update package list again to include Docker packages
+sudo apt-get update
 
-app.get('/health', (req, res) => {
-  res.json({ message: "Hello from Launch Template" });
-});
+# Install Docker Engine
+echo "Installing Docker Engine..."
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
-app.listen(port, () => {
-  console.log(\`App running on port \${port}\`);
-});
-EOT
+# Start Docker service
+echo "Starting Docker service..."
+sudo systemctl start docker
+sudo systemctl enable docker
 
-cat <<EOT >> package.json
-{
-  "name": "express-app",
-  "version": "1.0.0",
-  "description": "Simple Express app",
-  "main": "app.js",
-  "scripts": {
-    "start": "node app.js"
-  },
-  "dependencies": {
-    "express": "^4.17.1"
-  }
-}
-EOT
+# Add current user to docker group to avoid using sudo
+echo "Adding current user to docker group..."
+sudo usermod -aG docker $USER
 
-# Install npm dependencies and start the app
-npm install
-npm install -g pm2
-pm2 start app.js
-pm2 startup systemd
-pm2 save
-pm2 restart all
+# Pull the Docker image
+echo "Pulling Docker image..."
+sudo docker pull mriman/temp
+
+# Run the container
+echo "Running the container..."
+sudo docker run -d -p 3000:3000 mriman/temp
+
+# Print success message
+echo "Setup complete! The application should now be running on port 3000"
+echo "To check container status, run: docker ps"
+echo "To view logs, run: docker logs <container_id>"

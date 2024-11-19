@@ -7,7 +7,7 @@
 #### Resource: 
 Infrastructure that is being provisioned on the cloud.
 #### Application Load Balancer (ALB): 
-A type of load balancer provided by AWS, which distributes load and N/W traffic between diff. applications, working like a reverse proxy.
+A type of load balancer provided by AWS, which distributes load and N/W traffic between diff. applications, working like a reverse proxy. AWS requires ALBs to be deployed across at least two Availability Zones for high availability.
 #### Target Group: 
  Instance Group to which Load Balancer will forward request to, and will distribute the load to.
 ####  ALB Listener: 

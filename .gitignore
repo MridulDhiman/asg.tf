@@ -5,3 +5,5 @@ terraform.tfstate.backup
 FILE
 *.tfvars
 .terraform.lock.hcl
+.env
+.terraform.*
