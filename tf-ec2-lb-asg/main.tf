@@ -102,12 +102,18 @@ resource "aws_security_group" "ec2_sg" {
   vpc_id      = aws_vpc.tf-vpc.id
 
   ingress {
-    from_port       = 80
-    to_port         = 80
+    from_port       = 3000
+    to_port         = 3000
     protocol        = "tcp"
     security_groups = [aws_security_group.alb_sg.id] ## allow HTTP traffic from Load Balancer
   }
 
+  ingress {
+    from_port = 22
+    to_port = 22
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
   //Outbound Rules
   egress {
     from_port   = 0
@@ -130,16 +136,20 @@ resource "aws_lb" "alb" {
 ### Instance Target Group
 resource "aws_lb_target_group" "alb_tg" {
   name     = "alb-tg"
-  port     = 80
+  port     = 3000
   protocol = "HTTP"
   vpc_id   = aws_vpc.tf-vpc.id
 
-  health_check {
-    protocol = "HTTP"
-    port     = 3000
-    path     = "/health"
-    matcher  = "200"
-    interval = 300
+   health_check {
+    enabled             = true
+    healthy_threshold   = 2
+    interval            = 30
+    timeout             = 5
+    path                = "/"  # Adjust this to match your app's health check endpoint
+    port                = "traffic-port"
+    protocol            = "HTTP"
+    matcher             = "200"
+    unhealthy_threshold = 2
   }
 }
 
@@ -159,11 +169,11 @@ resource "aws_lb_listener" "name" {
 
 
 resource "aws_launch_template" "ec2_template" {
-  name          = "ec2_template"
+  name_prefix =          "ec2_template"
   description   = "EC2 launch template for Auto Scaling Group"
   image_id      = var.ami_id
   instance_type = var.instance_type
-
+  key_name = var.key_name
   ## configure with ec2 security groups
   network_interfaces {
     security_groups             = [aws_security_group.ec2_sg.id]
